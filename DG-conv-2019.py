@@ -235,8 +235,8 @@ for k in range(1,2):
         nel = 2*2**(l+1)
         h = (omega[1]-omega[0])/nel
         
-        tau_p = 0.000000000001* h
-        tau_u = 1/tau_p
+        tau_p = 0
+        tau_u = 100
         
         tam_h.append(h)
         phi = [ ]        
