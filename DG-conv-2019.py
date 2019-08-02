@@ -16,7 +16,7 @@ omega = [0.,1.]
 delta1 = -1/2
 delta2 =  1/2
 
-tau_u = 100
+tau_u = 10
 tau_p = 0
 
 X = sp.symbols('x')
@@ -91,7 +91,7 @@ def matriz_local_A(grau,a,b):
         for j in range(int(n/2)):
             K[2*i  ,2*j  ] = float( gaussian_int(  phi[j]* phi[i] + delta1* phi[j]* phi[i] + delta2*dphi[j]*dphi[i] ,a,b,grau) )
             K[2*i  ,2*j+1] = float( gaussian_int(- phi[j]*dphi[i] + delta1*dphi[j]* phi[i]                          ,a,b,grau) )
-            K[2*i+1,2*j  ] = float( gaussian_int(  phi[j]*dphi[i] + delta1* phi[j]*dphi[i]                          ,a,b,grau) )
+            K[2*i+1,2*j  ] = float( gaussian_int(-dphi[j]* phi[i] + delta1* phi[j]*dphi[i]                          ,a,b,grau) )
             K[2*i+1,2*j+1] = float( gaussian_int(                   delta1*dphi[j]*dphi[i]                          ,a,b,grau) )
     return K
 
@@ -101,9 +101,9 @@ def matriz_local_B(grau,a,b):
     for i in range(int(n/2)):
         for j in range(int(n/2)):
             K[2*i  , 2*j ] = float( fim(phi[j]*phi[i])*tau_u )
-            K[2*i  ,2*j+1] = float( fim(phi[j]*phi[i])/2     )
-            K[2*i+1,2*j  ] = float(-fim(phi[j]*phi[i])/2     )
             K[2*i+1,2*j+1] = float(-fim(phi[j]*phi[i])*tau_p )
+            K[2*i  ,2*j+1] = float( fim(phi[j]*phi[i])       )
+#            K[2*i+1,2*j  ] = float(-fim(phi[j]*phi[i])/2     )
     return K
 
 def matriz_local_C(grau,a,b):
@@ -112,9 +112,9 @@ def matriz_local_C(grau,a,b):
     for i in range(int(n/2)):
         for j in range(int(n/2)):
             K[2*i  , 2*j ] = float( ini(phi[j]*phi[i])*tau_u )
-            K[2*i  ,2*j+1] = float(-ini(phi[j]*phi[i])/2     )
-            K[2*i+1,2*j  ] = float( ini(phi[j]*phi[i])/2     )
-            K[2*i+1,2*j+1] = float( ini(phi[j]*phi[i])*tau_p )
+            K[2*i+1,2*j+1] = float(-ini(phi[j]*phi[i])*tau_p )
+            K[2*i  ,2*j+1] = float(-ini(phi[j]*phi[i])       )
+#            K[2*i+1,2*j  ] = float( ini(phi[j]*phi[i])/2     )
     return K
 
 
@@ -124,9 +124,9 @@ def matriz_local_D(grau,a,b):
     for i in range(int(n/2)):
         for j in range(int(n/2)):
             K[2*i  , 2*j ] = float(-ini(phi[j])*fim(phi[i])*tau_u )
-            K[2*i  ,2*j+1] = float( ini(phi[j])*fim(phi[i])/2     )
-            K[2*i+1,2*j  ] = float(-ini(phi[j])*fim(phi[i])/2     )
-            K[2*i+1,2*j+1] = float(-ini(phi[j])*fim(phi[i])*tau_p )
+            K[2*i+1,2*j+1] = float( ini(phi[j])*fim(phi[i])*tau_p )
+#            K[2*i  ,2*j+1] = float(-ini(phi[j])*fim(phi[i])/2     )
+#            K[2*i+1,2*j  ] = float(-ini(phi[j])*fim(phi[i])/2     )
     return K
 
 def matriz_local_E(grau,a,b):
@@ -135,9 +135,9 @@ def matriz_local_E(grau,a,b):
     for i in range(int(n/2)):
         for j in range(int(n/2)):
             K[2*i  , 2*j ] = float(-fim(phi[j])*ini(phi[i])*tau_u )
-            K[2*i  ,2*j+1] = float(-fim(phi[j])*ini(phi[i])/2     )
-            K[2*i+1,2*j  ] = float( fim(phi[j])*ini(phi[i])/2     )
-            K[2*i+1,2*j+1] = float(-fim(phi[j])*ini(phi[i])*tau_p )
+            K[2*i+1,2*j+1] = float( fim(phi[j])*ini(phi[i])*tau_p )
+#            K[2*i  ,2*j+1] = float(-fim(phi[j])*ini(phi[i])/2     )
+#            K[2*i+1,2*j  ] = float( fim(phi[j])*ini(phi[i])/2     )
     return K
 
 
@@ -156,7 +156,7 @@ def matriz_global(A,B,C,D,E,F0,FN,grau,nel):
     #Primeiro elemento da diagonal
     for i in range(2*(grau+1)):
         for j in range(2*(grau+1)):
-            K[i,j] += A[i,j] + F0[i,j] + B[i,j]
+            K[i,j] += A[i,j] + F0[i,j] + C[i,j]
     
     M = A + B + C
     for l in range(1,nel-1):
@@ -166,7 +166,7 @@ def matriz_global(A,B,C,D,E,F0,FN,grau,nel):
     #Ultimo elemento da diagonal
     for i in range(2*(grau+1)):
         for j in range(2*(grau+1)):
-            K[(nel-1)*(2*(grau+1))+i,(nel-1)*(2*(grau+1))+j] += A[i,j] + FN[i,j] + C[i,j]
+            K[(nel-1)*(2*(grau+1))+i,(nel-1)*(2*(grau+1))+j] += A[i,j] + FN[i,j] + B[i,j]
     
     for l in range(nel-1):
         for i in range(2*(grau+1)):
@@ -190,14 +190,14 @@ def contorno(grau):
     K2 = np.zeros((n,n))
     for i in range(grau+1):
         for j in range(grau+1):
-            K1[2*i  , 2*j ] = float( 0 )
-            K1[2*i  ,2*j+1] = float(-ini(phi[j]*phi[i]) )
-            K1[2*i+1,2*j  ] = float( ini(phi[j]*phi[i]) )
+            K1[2*i  , 2*j ] = float( fim(phi[j]*phi[i])*tau_u )
+            K1[2*i+1,2*j+1] = float(-fim(phi[j]*phi[i])*tau_p )
+            K1[2*i  ,2*j+1] = float( fim(phi[j]*phi[i])       )
             K1[2*i+1,2*j+1] = float( 0 )
             
-            K2[2*i  , 2*j ] = float( 0 )
-            K2[2*i  ,2*j+1] = float( fim(phi[j]*phi[i]) )
-            K2[2*i+1,2*j  ] = float(-fim(phi[j]*phi[i]) )
+            K2[2*i  , 2*j ] = float( ini(phi[j]*phi[i])*tau_u )
+            K2[2*i+1,2*j+1] = float(-ini(phi[j]*phi[i])*tau_p )
+            K2[2*i  ,2*j+1] = float(-ini(phi[j]*phi[i])       )
             K2[2*i+1,2*j+1] = float( 0 )
     return K1, K2
 
@@ -222,9 +222,9 @@ pts, exata_u = sol_analitica_u(256)
 pts, exata_p = sol_analitica_p(256)
 
 
-refinamentos = 3
+refinamentos = 4
 
-for k in range(1,6):
+for k in range(1,2):
     grau = k
     
     erro_u = []
@@ -234,6 +234,9 @@ for k in range(1,6):
         set_grau(k)
         nel = 2*2**(l+1)
         h = (omega[1]-omega[0])/nel
+        
+        tau_p = 0.000000000001* h
+        tau_u = 1/tau_p
         
         tam_h.append(h)
         phi = [ ]        
